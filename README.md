@@ -1,14 +1,23 @@
-# Flashsale Project (.readme)
 
-## 1) Coding Guideline & Convention
+## I. Introduction
+
+Flashsale Backend is a high-concurrency ticket booking service built with Spring Boot, Redis, Kafka, and PostgreSQL. It is designed to handle flash-sale traffic with idempotent checkout, atomic inventory control, and asynchronous booking processing while maintaining data consistency.
 
 ### Architecture
+![System Architecture](images/system_architecture.png)
 **API Pattern: Controller -> Service -> Repository**
 
 - **Controller**: Expose REST endpoints, validate input, map Request DTO -> Service call, and return Response DTO.
 - **Service**: Hold business logic, orchestration, transactions, idempotency, integrations (Redis/Kafka), and domain rules.
 - **Repository**: Data access layer (Spring Data JPA). No business logic here.
 
+### Entity Relationship Diagram
+![ERD](images/ERD.png)
+
+### Relation mapping database
+![RMD](images/Relation_Database.png)
+
+## II. Coding Guideline & Convention
 **DTOs (Data Transfer Objects)**
 
 - Request DTOs: `dto/request/*` (input validation with `jakarta.validation` annotations).
@@ -35,7 +44,7 @@ mvn test
 - Classes & interfaces: **PascalCase**
 - Constants: `UPPER_SNAKE_CASE` (when used)
 
-## 2) Local Setup & Run
+## III. Local Setup & Run
 
 ### Prerequisites
 - **Java 17** (project currently uses `java.version=17` in `pom.xml`; Java 21 is also acceptable if your toolchain supports it)
@@ -67,14 +76,14 @@ Run (option B, IDE): run the main class:
 Default local port:
 - `http://localhost:8080`
 
-## 3) API Documentation (Swagger)
+## IV. API Documentation (Swagger)
 
 Swagger UI is enabled via `springdoc-openapi-starter-webmvc-ui` (added in `pom.xml`).
 
 Access:
 - `http://localhost:8080/swagger-ui/index.html`
 
-## 4) API Testing Collections (Postman)
+## V. API Testing Collections (Postman)
 
 Files are stored in:
 - `/docs/postman`
