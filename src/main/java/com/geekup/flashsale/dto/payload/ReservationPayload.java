@@ -14,8 +14,6 @@ public class ReservationPayload {
 
     private String queueTicketId;
 
-    private Long concertId;
-
     private List<ReservationItem> items;
 
     private String status;

@@ -37,7 +37,7 @@ public class InventoryService {
         return new InventoryResponse(
                 category.getId(),
                 category.getName(),
-                category.getConcertId(),
+                category.getConcert().getId(),
                 category.getTotalQuantity(),
                 remaining
         );

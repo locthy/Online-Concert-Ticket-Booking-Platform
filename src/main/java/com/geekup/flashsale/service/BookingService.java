@@ -8,16 +8,14 @@ import com.geekup.flashsale.dto.response.CheckoutResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -25,6 +23,7 @@ import java.util.UUID;
 public class BookingService {
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
     private final RedisScript<Long> deductInventoryScript;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
@@ -51,18 +50,17 @@ public class BookingService {
             redisTemplate.delete(idempotencyRedisKey);
             throw new RuntimeException("Tickets are sold out!");
         }
-
         // 3. Generate Queue Ticket ID and Send to Kafka
         String queueTicketId = "qt_" + UUID.randomUUID();
 
         // 4. Create an internal event payload to send to the Kafka Topic
         ReservationPayload payload = new ReservationPayload(
                 queueTicketId,
-                request.getConcertId(),
                 request.getItems().stream()
                         .map(i -> new ReservationItem(
                                 i.getCategoryId(),
-                                i.getQuantity()
+                                i.getQuantity(),
+                                i.getConcertId()
                         ))
                         .toList(),
                 "PENDING",
@@ -75,6 +73,7 @@ public class BookingService {
                 payload,
                 Duration.ofMinutes(15) // If worker die, it automatically is deleted
         );
+        log.info("Save to Redis success. Queue ID: {} " + payload, queueTicketId);
 
         // 6. Push to kafka
         kafkaTemplate.send(KAFKA_TOPIC, queueTicketId, payload);
@@ -96,21 +95,35 @@ public class BookingService {
 
         for (CheckoutRequest.BookingItemRequest item : request.getItems()) {
 
-            String redisKey = "ticket_stock:" + item.getCategoryId();
+            // 1. Prepare BOTH keys
+            String stockKey = "ticket_stock:" + item.getCategoryId();
+            String eventKey = "event:" + item.getConcertId(); // or "concert:" + item.getConcertId() depending on your naming convention
 
-            Long result = (Long) redisTemplate.execute(
+            // 2. Pass both keys to the Lua script
+            Long result = (Long) stringRedisTemplate.execute(
                     deductInventoryScript,
-                    Collections.singletonList(redisKey),
-                    item.getQuantity()
+                    Arrays.asList(stockKey, eventKey), // Passing KEYS[1] and KEYS[2]
+                    String.valueOf(item.getQuantity()) // Passing ARGV[1]
             );
 
+            // 3. Handle the specific return codes from Lua
             if (result == null || result != 1L) {
-                log.warn("Inventory deduction failed for category {}. Starting ROLLBACK...", item.getCategoryId());
+
+                // Log the exact reason for failure
+                if (result != null && result == -2L) {
+                    log.warn("Checkout failed: Event/Concert {} does not exist or is closed!", item.getConcertId());
+                } else if (result != null && result == -1L) {
+                    log.warn("Checkout failed: Ticket category {} not found in Redis!", item.getCategoryId());
+                } else {
+                    log.warn("Checkout failed: Not enough stock for category {}.", item.getCategoryId());
+                }
+
+                log.info("Starting ROLLBACK for previously deducted items...");
 
                 // Start ROLLBACK: Return the deducted tickets of each category
                 for (CheckoutRequest.BookingItemRequest successItem : successfulDeductions) {
                     String rollbackKey = "ticket_stock:" + successItem.getCategoryId();
-                    redisTemplate.opsForValue().increment(rollbackKey, successItem.getQuantity());
+                    stringRedisTemplate.opsForValue().increment(rollbackKey, successItem.getQuantity());
                     log.info("Rolled back {} tickets for category {}", successItem.getQuantity(), successItem.getCategoryId());
                 }
 

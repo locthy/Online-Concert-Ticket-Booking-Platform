@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "booking_items")
+@Table(name = "booking_item")
 @Data
 @NoArgsConstructor
 public class BookingItem {
@@ -18,13 +18,16 @@ public class BookingItem {
     @JoinColumn(name = "booking_id", nullable = false)
     private Booking booking;
 
-    private Long categoryId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private TicketCategory ticketCategory;
 
+    @Column(nullable = false)
     private Integer quantity;
 
-    public BookingItem(Booking booking, Long categoryId, Integer quantity) {
+    public BookingItem(Booking booking, TicketCategory ticketCategory, Integer quantity) {
         this.booking = booking;
-        this.categoryId = categoryId;
+        this.ticketCategory = ticketCategory;
         this.quantity = quantity;
     }
 }

@@ -42,7 +42,7 @@ mvn test
 - **Maven**
 - **Docker** (Docker Desktop on Windows/macOS, Docker Engine on Linux)
 
-### Infrastructure / Hạ tầng
+### Infrastructure
 Start required services (PostgreSQL, Kafka, Redis):
 ```bash
 docker-compose up -d

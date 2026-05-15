@@ -3,7 +3,7 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_USER: geekup
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: flashsale
     ports:

@@ -14,15 +14,9 @@ import java.util.List;
 @AllArgsConstructor
 public class CheckoutRequest {
 
-    @NotNull(message = "Concert ID is required")
-    private Long concertId;
-
     @NotNull(message = "Items list cannot be null")
     @Valid
     private List<BookingItemRequest> items;
-
-    // Optional field, can be null
-    private String voucherCode;
 
     // Nested class for the items being purchased
     @Data
@@ -34,5 +28,8 @@ public class CheckoutRequest {
 
         @Min(value = 1, message = "Quantity must be at least 1")
         private Integer quantity;
+
+        @NotNull(message = "Concert ID is required")
+        private Long concertId;
     }
 }

@@ -12,4 +12,6 @@ public class ReservationItem {
     private Long categoryId;
 
     private Integer quantity;
+
+    private Long concertId;
 }

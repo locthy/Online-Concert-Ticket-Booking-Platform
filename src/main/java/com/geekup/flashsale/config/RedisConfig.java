@@ -1,5 +1,6 @@
 package com.geekup.flashsale.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
@@ -39,16 +40,28 @@ public class RedisConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
-        // Key serializer
+        // Key serializer (Giữ nguyên - Rất chuẩn)
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
 
-        // ObjectMapper hỗ trợ LocalDateTime
+        // Cấu hình ObjectMapper
         ObjectMapper objectMapper = new ObjectMapper();
+
+        // Hỗ trợ LocalDateTime
         objectMapper.registerModule(new JavaTimeModule());
 
-        // tránh serialize timestamp dạng số
+        // Tránh serialize timestamp dạng số
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        // BẮT BUỘC THÊM ĐOẠN NÀY: Kích hoạt lưu thông tin Class (Default Typing)
+        // Nếu không có, khi Deserialize từ Redis lên, Object sẽ bị biến thành LinkedHashMap
+        objectMapper.activateDefaultTyping(
+                BasicPolymorphicTypeValidator.builder()
+                        .allowIfBaseType(Object.class)
+                        .build(),
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
 
         GenericJackson2JsonRedisSerializer serializer =
                 new GenericJackson2JsonRedisSerializer(objectMapper);

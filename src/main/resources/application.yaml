@@ -9,7 +9,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     defer-datasource-initialization: true
 
   data:
@@ -26,3 +26,10 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
+logging:
+  level:
+    org.hibernate.SQL: OFF
+    org.hibernate.type.descriptor.sql: OFF
+    org.hibernate.orm.jdbc.bind: OFF
+    org.apache.kafka: ERROR
+    org.springframework.kafka: ERROR

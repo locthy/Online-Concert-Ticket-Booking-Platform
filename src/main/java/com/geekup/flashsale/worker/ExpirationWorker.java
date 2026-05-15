@@ -26,7 +26,7 @@ public class ExpirationWorker {
     @Scheduled(fixedRate = 30000)
     @Transactional
     public void cleanupExpiredBookings() {
-        LocalDateTime threshold = LocalDateTime.now().minusMinutes(5);
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(1);
 
         // Find product PENDING over 5 mins
         List<Booking> expiredBookings = bookingRepository.findAllByStatusAndCreatedAtBefore("PENDING", threshold);
@@ -59,7 +59,7 @@ public class ExpirationWorker {
                         item.getQuantity()
                 );
                 log.info("[REDIS] Return {} categoryId {} tickets for Concert ID: {} (Order: {})",
-                        item.getQuantity(), item.getCategoryId(), booking.getConcertId(), booking.getQueueTicketId());
+                        item.getQuantity(), item.getCategoryId(), item.getConcertId(), booking.getQueueTicketId());
             }
             // Set CANCELLED to the ticket status in database
             booking.setStatus("CANCELLED");

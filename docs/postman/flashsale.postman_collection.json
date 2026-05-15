@@ -1,0 +1,84 @@
+{
+  "info": {
+    "name": "Flashsale API",
+    "_postman_id": "b1c0c2d7-9cb9-4b43-8f8b-2bb8b4c4e8a2",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Checkout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/bookings/checkout",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "bookings",
+            "checkout"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"concertId\": 99,\n  \"items\": [\n    {\n      \"categoryId\": {{category_id}},\n      \"quantity\": 1\n    }\n  ]\n}\n"
+        },
+        "description": "Queue a booking request. Returns 202 with queueTicketId."
+      }
+    },
+    {
+      "name": "Order Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/bookings/status/{{queue_ticket_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "bookings",
+            "status",
+            "{{queue_ticket_id}}"
+          ]
+        },
+        "description": "Poll booking status using queueTicketId from Checkout."
+      }
+    },
+    {
+      "name": "Inventory Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/inventory/{{category_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "inventory",
+            "{{category_id}}"
+          ]
+        },
+        "description": "Read remaining inventory from Redis (fallback to DB totalQuantity if key missing)."
+      }
+    }
+  ]
+}
+

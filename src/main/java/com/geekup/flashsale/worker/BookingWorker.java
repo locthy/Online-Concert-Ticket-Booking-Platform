@@ -36,13 +36,12 @@ public class BookingWorker {
 
             for (ReservationItem item : payload.getItems()) {
                 TicketCategory category = ticketCategoryRepository.findById(item.getCategoryId())
-                        .orElseThrow(() -> new RuntimeException("Not found category ticket!"));
+                        .orElseThrow(() -> new IllegalArgumentException("Not found category ticket!"));
 
                 totalAmount += (category.getPrice() * item.getQuantity());
             }
 
             Booking newBooking = new Booking(
-                    payload.getConcertId(),
                     payload.getQueueTicketId(),
                     payload.getIdempotencyKey(),
                     totalAmount,
@@ -60,8 +59,13 @@ public class BookingWorker {
             //Save to Redis
             redisTemplate.opsForValue().set(redisKey, paymentUrl, Duration.ofMinutes(15));
             log.info("[DONE] Payment link ready and stored in Redis for QID: {}", qid);
+        } catch (IllegalArgumentException e) {
+            // [QUAN TRỌNG] Bắt lỗi Dữ liệu sai ở đây!
+            // Chỉ log ra lỗi, KHÔNG dùng "throw e;" nữa.
+            log.error("[WORKER ERROR] Invalid data for QueueID {}: {}", qid, e.getMessage());
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("[ERROR] Save transaction: {}", e.getMessage());
             throw e;
         }
