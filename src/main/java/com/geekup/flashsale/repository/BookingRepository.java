@@ -7,11 +7,18 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Data access for booking aggregates.
+ */
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-    // Spring Data JPA will automatically implement CRUD methods here
-    List<Booking> findAllByStatusAndCreatedAtBefore(
-            String status,
-            LocalDateTime time
-    );
+
+    /**
+     * Finds bookings in a given status created before a threshold.
+     *
+     * @param status booking status
+     * @param time creation time threshold
+     * @return matching bookings
+     */
+    List<Booking> findAllByStatusAndCreatedAtBefore(String status, LocalDateTime time);
 }

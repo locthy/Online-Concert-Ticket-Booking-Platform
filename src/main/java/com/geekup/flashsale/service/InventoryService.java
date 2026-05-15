@@ -7,6 +7,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+/**
+ * Reads inventory from Redis with database fallback.
+ */
 @Service
 @RequiredArgsConstructor
 public class InventoryService {
@@ -14,6 +17,12 @@ public class InventoryService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final TicketCategoryRepository ticketCategoryRepository;
 
+    /**
+     * Returns stock information for a category.
+     *
+     * @param categoryId ticket category id
+     * @return inventory response
+     */
     public InventoryResponse getInventory(Long categoryId) {
         TicketCategory category = ticketCategoryRepository.findById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("TicketCategory not found: " + categoryId));
@@ -43,4 +52,3 @@ public class InventoryService {
         );
     }
 }
-

@@ -3,13 +3,15 @@ package com.geekup.flashsale.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
+import java.time.LocalDateTime;
+
+/**
+ * Voucher entity that can discount a specific ticket category.
+ */
 @Entity
 @Data
-@Table(name="voucher")
+@Table(name = "voucher")
 @NoArgsConstructor
 public class Voucher {
     @Id
@@ -37,5 +39,4 @@ public class Voucher {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private TicketCategory ticketCategory;
-
 }

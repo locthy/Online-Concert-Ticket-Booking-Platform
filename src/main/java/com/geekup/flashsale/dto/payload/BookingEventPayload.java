@@ -5,6 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Legacy event payload wrapper for booking events.
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

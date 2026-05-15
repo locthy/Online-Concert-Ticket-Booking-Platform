@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Booking line item that binds a booking with a ticket category and quantity.
+ */
 @Entity
 @Table(name = "booking_item")
 @Data

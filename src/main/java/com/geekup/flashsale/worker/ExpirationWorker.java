@@ -14,6 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Background job that expires stale pending bookings and restores stock in Redis.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -22,24 +25,23 @@ public class ExpirationWorker {
     private final BookingRepository bookingRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    // Run every 30 seconds
+    /**
+     * Runs every 30 seconds to cancel expired pending bookings.
+     */
     @Scheduled(fixedRate = 30000)
     @Transactional
     public void cleanupExpiredBookings() {
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(1);
-
-        // Find product PENDING over 5 mins
         List<Booking> expiredBookings = bookingRepository.findAllByStatusAndCreatedAtBefore("PENDING", threshold);
 
-        if (expiredBookings.isEmpty()) return;
+        if (expiredBookings.isEmpty()) {
+            return;
+        }
 
         log.info("[EXPIRATION] Found {} expired bookings", expiredBookings.size());
 
-        // Check every reservation
         for (Booking booking : expiredBookings) {
-            String reservationKey =
-                    "reservation:" + booking.getQueueTicketId();
-
+            String reservationKey = "reservation:" + booking.getQueueTicketId();
             ReservationPayload reservation = (ReservationPayload) redisTemplate.opsForValue().get(reservationKey);
 
             if (reservation == null) {
@@ -48,22 +50,16 @@ public class ExpirationWorker {
                 bookingRepository.save(booking);
                 continue;
             }
-            // return all the fail tickets to Redis
+
+            // Restore reserved quantities back to Redis stock.
             for (ReservationItem item : reservation.getItems()) {
-
-                String stockKey =
-                        "ticket_stock:" + item.getCategoryId();
-
-                redisTemplate.opsForValue().increment(
-                        stockKey,
-                        item.getQuantity()
-                );
+                String stockKey = "ticket_stock:" + item.getCategoryId();
+                redisTemplate.opsForValue().increment(stockKey, item.getQuantity());
                 log.info("[REDIS] Return {} categoryId {} tickets for Concert ID: {} (Order: {})",
                         item.getQuantity(), item.getCategoryId(), item.getConcertId(), booking.getQueueTicketId());
             }
-            // Set CANCELLED to the ticket status in database
-            booking.setStatus("CANCELLED");
 
+            booking.setStatus("CANCELLED");
         }
     }
 }

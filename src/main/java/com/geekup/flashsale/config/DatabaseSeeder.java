@@ -3,7 +3,6 @@ package com.geekup.flashsale.config;
 import com.geekup.flashsale.entity.Concert;
 import com.geekup.flashsale.entity.TicketCategory;
 import com.geekup.flashsale.repository.ConcertRepository;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -13,25 +12,30 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+/**
+ * Seeds baseline concert and ticket data and synchronizes Redis inventory keys.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class DatabaseSeeder implements CommandLineRunner {
 
     private final ConcertRepository concertRepository;
-
-    // THÊM: Inject RedisTemplate để đẩy dữ liệu lên RAM
     private final StringRedisTemplate redisTemplate;
 
+    /**
+     * Initializes startup seed data and cache keys.
+     *
+     * @param args startup arguments
+     */
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-
         log.info("[DB Seeder] Starting database initialization...");
 
         Concert concert;
 
-        // 1. Check Database
+        // Step 1: Ensure baseline relational data exists.
         if (concertRepository.count() == 0) {
             log.info("[DB Seeder] No concert found in DB. Creating new one...");
             concert = new Concert();
@@ -58,16 +62,13 @@ public class DatabaseSeeder implements CommandLineRunner {
             log.info("[DB] Saved Concert and Tickets to PostgreSQL.");
         } else {
             log.info("[DB Seeder] Concert already exists in DB. Fetching...");
-            // Grab the first concert from the DB
             concert = concertRepository.findAll().get(0);
         }
 
-        // ==========================================
-        // 2. ALWAYS CHECK AND SYNC REDIS
-        // ==========================================
+        // Step 2: Ensure Redis contains event status and stock keys.
         String eventKey = "event:" + concert.getId();
 
-        // Check if Redis is missing this event (e.g., if Redis was restarted/flushed)
+        // Rebuild cache keys if Redis was restarted or flushed.
         if (Boolean.FALSE.equals(redisTemplate.hasKey(eventKey))) {
             log.info("[REDIS] Missing data in Redis. Syncing from DB...");
 
@@ -79,6 +80,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 redisTemplate.opsForValue().set(stockKey, String.valueOf(category.getAvailableQuantity()));
                 log.info("[REDIS] Seeded stock for {}: {} tickets", stockKey, category.getAvailableQuantity());
             }
+
             log.info("[REDIS] Successfully synced Database to Redis!");
         } else {
             log.info("[REDIS] Data is already present in Redis. All good!");

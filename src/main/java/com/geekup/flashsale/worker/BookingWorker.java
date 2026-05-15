@@ -2,11 +2,11 @@ package com.geekup.flashsale.worker;
 
 import com.geekup.flashsale.dto.payload.ReservationItem;
 import com.geekup.flashsale.dto.payload.ReservationPayload;
+import com.geekup.flashsale.entity.Booking;
 import com.geekup.flashsale.entity.TicketCategory;
+import com.geekup.flashsale.repository.BookingRepository;
 import com.geekup.flashsale.repository.TicketCategoryRepository;
 import com.geekup.flashsale.service.PaymentService;
-import com.geekup.flashsale.entity.Booking;
-import com.geekup.flashsale.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -16,6 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 
+/**
+ * Kafka consumer that persists booking transactions and prepares payment links.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -26,6 +29,12 @@ public class BookingWorker {
     private final PaymentService paymentService;
     private final TicketCategoryRepository ticketCategoryRepository;
 
+    /**
+     * Consumes reservation events, computes total amount, creates booking record,
+     * and stores payment link in Redis.
+     *
+     * @param payload reservation payload from Kafka
+     */
     @Transactional
     @KafkaListener(topics = "booking_events", groupId = "flashsale-group")
     public void consumeBookingEvent(ReservationPayload payload) {
@@ -37,7 +46,6 @@ public class BookingWorker {
             for (ReservationItem item : payload.getItems()) {
                 TicketCategory category = ticketCategoryRepository.findById(item.getCategoryId())
                         .orElseThrow(() -> new IllegalArgumentException("Not found category ticket!"));
-
                 totalAmount += (category.getPrice() * item.getQuantity());
             }
 
@@ -49,23 +57,16 @@ public class BookingWorker {
             );
 
             bookingRepository.save(newBooking);
-
             log.info("[DATABASE] Save to database. ID: {}", newBooking.getId());
 
-            // Call Payment Service
             String paymentUrl = paymentService.createVirtualPaymentLink(qid, totalAmount);
             String redisKey = "payment_link:" + qid;
-
-            //Save to Redis
             redisTemplate.opsForValue().set(redisKey, paymentUrl, Duration.ofMinutes(15));
             log.info("[DONE] Payment link ready and stored in Redis for QID: {}", qid);
         } catch (IllegalArgumentException e) {
-            // [QUAN TRỌNG] Bắt lỗi Dữ liệu sai ở đây!
-            // Chỉ log ra lỗi, KHÔNG dùng "throw e;" nữa.
+            // Invalid payload data should be logged and skipped to avoid poison retries.
             log.error("[WORKER ERROR] Invalid data for QueueID {}: {}", qid, e.getMessage());
-
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("[ERROR] Save transaction: {}", e.getMessage());
             throw e;
         }

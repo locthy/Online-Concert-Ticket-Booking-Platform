@@ -3,6 +3,9 @@ package com.geekup.flashsale.dto.response;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+/**
+ * API response model describing category stock levels.
+ */
 @Data
 @AllArgsConstructor
 public class InventoryResponse {
@@ -12,4 +15,3 @@ public class InventoryResponse {
     private Integer totalQuantity;
     private Integer remainingQuantity;
 }
-

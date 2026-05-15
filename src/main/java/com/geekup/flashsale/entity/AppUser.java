@@ -1,14 +1,15 @@
 package com.geekup.flashsale.entity;
 
 import jakarta.persistence.*;
-
-import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * User entity used for authentication and booking ownership.
+ */
 @Entity
 @Table(name = "app_user")
 @Data
@@ -33,12 +34,22 @@ public class AppUser {
     @OneToMany(mappedBy = "user")
     private List<Booking> bookings = new ArrayList<>();
 
+    /**
+     * Links booking to this user and maintains both sides of relation.
+     *
+     * @param booking booking entity
+     */
     public void addBooking(Booking booking) {
         bookings.add(booking);
         booking.setUser(this);
     }
 
-    public void removebooking(Booking booking) {
+    /**
+     * Unlinks booking from this user and maintains both sides of relation.
+     *
+     * @param booking booking entity
+     */
+    public void removeBooking(Booking booking) {
         this.bookings.remove(booking);
         booking.setUser(null);
     }

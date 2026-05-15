@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Ticket category under a concert (for example VIP or Standard).
+ */
 @Entity
 @Table(name = "ticket_category")
 @Data
@@ -18,7 +21,7 @@ public class TicketCategory {
     private Long id;
 
     @Column(nullable = false)
-    private String name; // e.g., "VIP", "Standard"
+    private String name;
 
     @Column(nullable = false)
     private Double price;
@@ -36,11 +39,21 @@ public class TicketCategory {
     @JoinColumn(name = "concert_id", nullable = false)
     private Concert concert;
 
+    /**
+     * Adds a voucher and binds relation.
+     *
+     * @param voucher voucher entity
+     */
     public void addVoucher(Voucher voucher) {
         vouchers.add(voucher);
         voucher.setTicketCategory(this);
     }
 
+    /**
+     * Removes a voucher and clears relation.
+     *
+     * @param voucher voucher entity
+     */
     public void removeVoucher(Voucher voucher) {
         this.vouchers.remove(voucher);
         voucher.setTicketCategory(null);

@@ -3,10 +3,14 @@ package com.geekup.flashsale.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Booking aggregate root representing a queued or completed order.
+ */
 @Entity
 @Table(name = "booking")
 @Data
@@ -26,12 +30,11 @@ public class Booking {
     private Double totalAmount;
 
     @Column(nullable = false)
-    private String status; // PENDING, PAID, CANCELLED
+    private String status;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    // Added CascadeType.ALL so saving Booking saves items automatically
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL)
     private List<BookingItem> items = new ArrayList<>();
 
@@ -53,6 +56,9 @@ public class Booking {
         this.status = status;
     }
 
+    /**
+     * Initializes creation timestamp when inserting a new record.
+     */
     @PrePersist
     public void prePersist() {
         if (this.createdAt == null) {
@@ -60,12 +66,21 @@ public class Booking {
         }
     }
 
-    // Helper method to link items safely
+    /**
+     * Adds an item and updates the inverse relation.
+     *
+     * @param item booking item
+     */
     public void addItem(BookingItem item) {
         items.add(item);
         item.setBooking(this);
     }
 
+    /**
+     * Removes an item and updates the inverse relation.
+     *
+     * @param item booking item
+     */
     public void removeItem(BookingItem item) {
         this.items.remove(item);
         item.setBooking(null);

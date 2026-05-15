@@ -4,8 +4,11 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Payment transaction record associated with a booking.
+ */
 @Entity
-@Table(name="payment_transaction")
+@Table(name = "payment_transaction")
 @Data
 @NoArgsConstructor
 public class PaymentTransaction {

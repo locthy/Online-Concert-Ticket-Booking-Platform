@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+/**
+ * Client request model for checkout.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,7 +21,9 @@ public class CheckoutRequest {
     @Valid
     private List<BookingItemRequest> items;
 
-    // Nested class for the items being purchased
+    /**
+     * A single requested ticket category and quantity.
+     */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
